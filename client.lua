@@ -1,24 +1,21 @@
 ----------------------------------------------------------------------------------------------------
 -- Variables
 ----------------------------------------------------------------------------------------------------
-QBCore = exports['qb-core']:GetCoreObject()
 
--- local ESX = nil;
--- local XPlayer = nil;
--- local OwnPlayerData = nil;
--- local DependenciesLoaded = false;
+local ply = nil;
+local _OwnPlayerData = nil;
+local _DependenciesLoaded = false;
 
-local Impound = Config.Impound
-local GuiEnabled = false
-local VehicleAndOwner = nil;
-local ImpoundedVehicles = nil;
+local _Impound = Config.Impound
 
-----------------------------------------------------------------------------------------------------
--- Setup & Initialization
-----------------------------------------------------------------------------------------------------
+local _GuiEnabled = false
+
+local _VehicleAndOwner = nil;
+
+local _ImpoundedVehicles = nil;
 
 function ActivateBlips()
-	local blip = AddBlipForCoord(Impound.RetrieveLocation.X, Impound.RetrieveLocation.Y, Impound.RetrieveLocation.Z)
+	local blip = AddBlipForCoord(_Impound.RetrieveLocation.X, _Impound.RetrieveLocation.Y, _Impound.RetrieveLocation.Z)
 	SetBlipScale(blip, 1.25)
 	SetBlipDisplay(blip, 4)
 	SetBlipSprite(blip, 430)
@@ -42,29 +39,29 @@ function ShowHelpNotification(text)
     DisplayHelpTextFromStringLabel(0, false, true, 5000);
 end
 
--- RegisterNetEvent('HRP:ESX:SetCharacter')
--- AddEventHandler('HRP:ESX:SetCharacter', function (playerData)
--- 	OwnPlayerData = playerData
--- end)
+RegisterNetEvent('HRP:ESX:SetCharacter')
+AddEventHandler('HRP:ESX:SetCharacter', function (playerData)
+	_OwnPlayerData = playerData
+end)
 
 RegisterNetEvent('HRP:ESX:SetVehicleAndOwner')
 AddEventHandler('HRP:ESX:SetVehicleAndOwner', function (vehicleAndOwner)
-	VehicleAndOwner = vehicleAndOwner;
+	_VehicleAndOwner = vehicleAndOwner;
 end)
 
 RegisterNetEvent('HRP:Impound:SetImpoundedVehicles')
 AddEventHandler('HRP:Impound:SetImpoundedVehicles', function (impoundedVehicles)
-	ImpoundedVehicles = impoundedVehicles;
+	_ImpoundedVehicles = impoundedVehicles;
 end)
 
 RegisterNetEvent('HRP:Impound:VehicleUnimpounded')
 AddEventHandler('HRP:Impound:VehicleUnimpounded', function (data, index)
 	local spawnLocationIndex = index % 3 + 1
 	local localVehicle = json.decode(data.vehicle)
-	-- print(localVehicle.health);
-	QBCore.Functions.SpawnVehicle(localVehicle.model, Impound.SpawnLocations[spawnLocationIndex],
-		Impound.SpawnLocations[spawnLocationIndex].h, function (spawnedVehicle)
-		QBCore.Functions.SetVehicleProperties(spawnedVehicle, localVehicle)
+	print(localVehicle.health);
+	Bridge.ClientSpawnVehicle(localVehicle.model, _Impound.SpawnLocations[spawnLocationIndex],
+		_Impound.SpawnLocations[spawnLocationIndex].h, function (spawnedVehicle)
+		Bridge.SetVehicleProperties(spawnedVehicle, localVehicle)
 
 		SetVehicleEngineHealth(spawnedVehicle, localVehicle.engineHealth);
 		SetVehicleBodyHealth(spawnedVehicle, localVehicle.bodyHealth);
@@ -74,57 +71,62 @@ AddEventHandler('HRP:Impound:VehicleUnimpounded', function (data, index)
 		SetVehicleDirtLevel(spawnedVehicle, localVehicle.dirtLevel);
 
 		for windowIndex = 1, 13, 1 do
+			if Config.Debug then
 			Citizen.Trace("Smashing window! ")
+			end
 			if(localVehicle.windows[windowIndex] == false) then
 				SmashVehicleWindow(spawnedVehicle, windowIndex);
 			end
 		end
 
 		for tyreIndex = 1, 7, 1 do
+			if Config.Debug then
 			Citizen.Trace("Pooppiiiin! ")
+			end
 			if(localVehicle.tyresburst[tyreIndex] ~= false) then
 				SetVehicleTyreBurst(spawnedVehicle, tyreIndex, true, 1000);
 			end
 		end
 
 	end)
-	QBCore.Functions.Notify("Your vehicle with the plate: " .. data.plate .. " has been unimpounded!")
-	SetNewWaypoint(Impound.SpawnLocations[spawnLocationIndex].x, Impound.SpawnLocations[spawnLocationIndex].y)
+	 Bridge.Notify("Your vehicle with the plate: " .. data.plate .. " has been unimpounded!")
+	SetNewWaypoint(_Impound.SpawnLocations[spawnLocationIndex].x, _Impound.SpawnLocations[spawnLocationIndex].y)
 end)
 
 RegisterNetEvent('HRP:Impound:CannotUnimpound')
 AddEventHandler('HRP:Impound:CannotUnimpound', function ()
-	QBCore.Functions.Notify("Your vehicle cannot be unimpounded at this moment, do you have enough cash?");
+	 Bridge.Notify("Your vehicle cannot be unimpounded at this moment, do you have enough cash?");
 end)
 
 ----------------------------------------------------------------------------------------------------
 -- NUI bs
 ----------------------------------------------------------------------------------------------------
 
-function ShowImpoundMenu(action)
+function ShowImpoundMenu (action)
 
 	local pos = GetEntityCoords(GetPlayerPed(PlayerId()))
 	local vehicle = GetClosestVehicle(pos.x, pos.y, pos.z, 5.0, 0, 71)
 
 	if (IsPedInAnyVehicle(GetPlayerPed(PlayerId()))) then
-		QBCore.Functions.Notify("Leave the vehicle first")
+		 Bridge.Notify("Leave the vehicle first")
 		return
 	end
 
 
 	if (vehicle ~= nil) then
-		local v = QBCore.Functions.GetVehicleProperties(vehicle)
+		local v = Bridge.GetVehicleProperties(vehicle)
 		local data = {}
 
+		TriggerServerEvent('HRP:ESX:GetCharacter', ply.identifier)
 		TriggerServerEvent('HRP:ESX:GetVehicleAndOwner', v.plate)
-		Wait(500);
+		Citizen.Wait(500);
 
 		if(Config.NoPlateColumn == true) then
-			Wait(Config.WaitTime);
+			Citizen.Wait(Config.WaitTime);
 		end
 
-		if(VehicleAndOwner == nil) then
-			QBCore.Functions.Notify('Unknown vehicle owner, cannot impound');
+		if(_VehicleAndOwner == nil) then
+			 Bridge.Notify('Unknown vehicle owner, cannot impound');
 			return
 		end
 
@@ -132,73 +134,73 @@ function ShowImpoundMenu(action)
 		data.form 	= "impound"
 		data.rules  = Config.Rules
 		data.vehicle = {
-			plate = VehicleAndOwner.plate,
-			owner = VehicleAndOwner.firstname .. ' ' .. VehicleAndOwner.lastname
+			plate = _VehicleAndOwner.plate,
+			owner = _VehicleAndOwner.firstname .. ' ' .. _VehicleAndOwner.lastname
 			}
 
-		if (QBCore.Functions.GetPlayerData().job.name == 'police') then
-			local PlayerData = QBCore.Functions.GetPlayerData()
-			data.officer = PlayerData.charinfo.firstname .. ' ' .. PlayerData.charinfo.lastname;
-			GuiEnabled = true
+		if (ply.job.name == 'police') then
+			data.officer = _OwnPlayerData.firstname .. ' ' .. _OwnPlayerData.lastname;
+			_GuiEnabled = true
 			SetNuiFocus(true, true)
 			SendNuiMessage(json.encode(data))
 		end
 
-		if (QBCore.Functions.GetPlayerData().job.name == 'mechanic') then
-			local PlayerData = QBCore.Functions.GetPlayerData()
-			data.mechanic = PlayerData.charinfo.firstname .. ' ' .. PlayerData.charinfo.lastname;
-			GuiEnabled = true
+		if (ply.job.name == 'mecano') then
+			data.mechanic = _OwnPlayerData.firstname .. ' ' .. _OwnPlayerData.lastname;
+			_GuiEnabled = true
 			SetNuiFocus(true, true)
 			SendNuiMessage(json.encode(data))
 		end
 	else
-		QBCore.Functions.Notify('No vehicle nearby');
+		 Bridge.Notify('No vehicle nearby');
 	end
+
 end
 
 function ShowAdminTerminal ()
-	local xPlayer = QBCore.Functions.GetPlayerData()
-	GuiEnabled = true
+	ply = _ESX.GetPlayerData()
+	_GuiEnabled = true
 
 	TriggerServerEvent('HRP:Impound:GetVehicles')
-	Wait(500)
+	Citizen.Wait(500)
 
 	SetNuiFocus(true, true)
 	local data = {
 		action = "open",
 		form = "admin",
-		user = xPlayer,
-		job = xPlayer.job,
-		vehicles = ImpoundedVehicles
+		user = _OwnPlayerData,
+		job = ply.job,
+		vehicles = _ImpoundedVehicles
 	}
 
 	SendNuiMessage(json.encode(data))
 end
 
 function DisableImpoundMenu ()
-	local xPlayer = QBCore.Functions.GetPlayerData()
-	GuiEnabled = false
+	_GuiEnabled = false
 	SetNuiFocus(false)
 	SendNuiMessage("{\"action\": \"close\", \"form\": \"none\"}")
-	xPlayer = nil;
-	VehicleAndOwner = nil;
-	ImpoundedVehicles = nil;
+	_OwnPlayerData = nil;
+	_VehicleAndOwner = nil;
+	_ImpoundedVehicles = nil;
 end
 
 function ShowRetrievalMenu ()
-	local xPlayer = QBCore.Functions.GetPlayerData()
 
-	TriggerServerEvent('HRP:Impound:GetImpoundedVehicles', xPlayer.identifier)
-	Wait(500)
+	local ply = Bridge.GetPlayerData()
 
-	GuiEnabled = true
+	TriggerServerEvent('HRP:ESX:GetCharacter', ply.identifier)
+	TriggerServerEvent('HRP:Impound:GetImpoundedVehicles', ply.identifier)
+	Citizen.Wait(500)
+
+	_GuiEnabled = true
 	SetNuiFocus(true, true)
 	local data = {
 		action = "open",
 		form = "retrieve",
-		user = xPlayer,
-		job = xPlayer.job,
-		vehicles = ImpoundedVehicles
+		user = _OwnPlayerData,
+		job = ply.job,
+		vehicles = _ImpoundedVehicles
 	}
 
 	SendNuiMessage(json.encode(data))
@@ -211,8 +213,8 @@ RegisterNUICallback('escape', function(data, cb)
 end)
 
 RegisterNUICallback('impound', function(data, cb)
-	local v = QBCore.Functions.GetClosestVehicle();
-	local veh = QBCore.Functions.GetVehicleProperties(v);
+	local v = Bridge.GetClosestVeh();
+	local veh = Bridge.GetVehicleProperties(v);
 
 	veh.engineHealth = GetVehicleEngineHealth(v);
 	veh.bodyHealth = GetVehicleBodyHealth(v);
@@ -244,23 +246,25 @@ RegisterNUICallback('impound', function(data, cb)
 	end
 
 	if (veh.plate:gsub("%s+", "") ~= data.plate:gsub("%s+", "")) then
-		QBCore.Functions.Notify("The processed vehicle, and nearest vehicle do not match");
+		 Bridge.Notify("The processed vehicle, and nearest vehicle do not match");
 		return
 	end
 
 	data.vehicle = json.encode(veh);
-	data.identifier = VehicleAndOwner.identifier;
+	data.identifier = _VehicleAndOwner.identifier;
 
 	TriggerServerEvent('HRP:Impound:ImpoundVehicle', data)
 
-	QBCore.Functions.DeleteVehicle(QBCore.Functions.GetClosestVehicle());
+	Bridge.ClientDeleteVeh(Bridge.GetClosestVeh);
 
 	DisableImpoundMenu()
     -- cb('ok')
 end)
 
 RegisterNUICallback('unimpound', function(plate, cb)
+	if Config.Debug then
 	Citizen.Trace("Unimpounding:" .. plate)
+	end
 	TriggerServerEvent('HRP:Impound:UnimpoundVehicle', plate);
 	DisableImpoundMenu();
 	-- cb('ok');
@@ -274,71 +278,74 @@ end)
 ----------------------------------------------------------------------------------------------------
 
 -- Decide what the player is currently doing and showing a help notification.
-CreateThread(function ()
+Citizen.CreateThread(function ()
+
 	while true do
 		inZone = false;
-		Wait(500)
+		Citizen.Wait(500)
+		if(_DependenciesLoaded) then
 			local PlayerPed = GetPlayerPed(PlayerId())
 			local PlayerPedCoords = GetEntityCoords(PlayerPed)
 
-			if (GetDistanceBetweenCoords(Impound.RetrieveLocation.X, Impound.RetrieveLocation.Y, Impound.RetrieveLocation.Z,
+			if (GetDistanceBetweenCoords(_Impound.RetrieveLocation.X, _Impound.RetrieveLocation.Y, _Impound.RetrieveLocation.Z,
 				PlayerPedCoords.x, PlayerPedCoords.y, PlayerPedCoords.z, false) < 3) then
 
 				inZone = true;
 
-				if (CurrentAction ~= "retrieve") then
+				if (_CurrentAction ~= "retrieve") then
 
-					CurrentAction = "retrieve"
-					QBCore:Notify("Press ~INPUT_CONTEXT~ To unimpound a vehicle");
+					_CurrentAction = "retrieve"
+					Bridge.TextUI("Press ~INPUT_CONTEXT~ To unimpound a vehicle");
 
 				end
 
-			elseif (GetDistanceBetweenCoords(Impound.StoreLocation.X, Impound.StoreLocation.Y, Impound.StoreLocation.Z,
+			elseif (GetDistanceBetweenCoords(_Impound.StoreLocation.X, _Impound.StoreLocation.Y, _Impound.StoreLocation.Z,
 				PlayerPedCoords.x, PlayerPedCoords.y, PlayerPedCoords.z, false) < 3) then
 
 				inZone = true;
 
-				if (CurrentAction ~= "store" and (QBCore.Functions.GetPlayerData().job.name == 'police' or QBCore.Functions.GetPlayerData().job.name == 'mechanic')) then
+				if (_CurrentAction ~= "store" and (ply.job.name == "police" or ply.job.name == "mecano")) then
 
-					CurrentAction = "store"
-					QBCore:Notify("Press ~INPUT_CONTEXT~ To impound this vehicle");
+					_CurrentAction = "store"
+					Bridge.TextUI("Press ~INPUT_CONTEXT~ To impound this vehicle");
 
 				end
 
 			else
-				for i, location in ipairs(Impound.AdminTerminalLocations) do
+				for i, location in ipairs(_Impound.AdminTerminalLocations) do
 					if (GetDistanceBetweenCoords(location.x, location.y, location.z,
 					PlayerPedCoords.x, PlayerPedCoords.y, PlayerPedCoords.z, false) < 3) then
 
 						inZone = true;
 
-						if (CurrentAction ~= "admin" and (QBCore.Functions.GetPlayerData().job.name == 'police' or QBCore.Functions.GetPlayerData().job.name == 'mechanic')) then
+						if (_CurrentAction ~= "admin" and (ply.job.name == "police" or ply.job.name == "mecano")) then
 
-							CurrentAction = "admin"
-							QBCore:Notify("Press ~INPUT_CONTEXT~ To open the admin terminal");
+							_CurrentAction = "admin"
+							Bridge.TextUI("Press ~INPUT_CONTEXT~ To open the admin terminal");
 						end
 
 						break;
 					end
 				end
 			end
+		end
 
 		if not inZone then
-			CurrentAction = nil;
+			Bridge.HideUI()
+			_CurrentAction = nil;
 		end
 	end
 end)
 
-CreateThread(function ()
-
+Citizen.CreateThread(function ()
 	while true do
-		Wait(0)
+		Citizen.Wait(0)
 		if (IsControlJustReleased(0, 38)) then
-			if (CurrentAction == "retrieve") then
+			if (_CurrentAction == "retrieve") then
 				ShowRetrievalMenu()
-			elseif (CurrentAction == "store") then
+			elseif (_CurrentAction == "store") then
 				ShowImpoundMenu("store")
-			elseif (CurrentAction == "admin") then
+			elseif (_CurrentAction == "admin") then
 				ShowAdminTerminal("admin")
 			end
 		end
@@ -346,9 +353,9 @@ CreateThread(function ()
 end)
 
 -- Disable background actions if the player is currently in a menu
-CreateThread(function()
+Citizen.CreateThread(function()
   while true do
-    if GuiEnabled then
+    if _GuiEnabled then
       local ply = GetPlayerPed(-1)
       local active = true
       DisableControlAction(0, 1, active) -- LookLeftRight
@@ -361,7 +368,7 @@ CreateThread(function()
         SendNUIMessage({type = "click"})
       end
     end
-    Wait(0)
+    Citizen.Wait(0)
   end
 end)
 

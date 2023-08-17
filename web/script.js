@@ -44,7 +44,7 @@ $(document).ready(function () {
 	// On 'Esc' call close method
 	document.onkeyup = function (data) {
 		if (data.which == 27 ) {
-			$.post('http://hrp_pd_impound/escape', JSON.stringify({}));
+			$.post('http://fezz_impound/escape', JSON.stringify({}));
 		}
 	};
 
@@ -81,7 +81,7 @@ $(document).ready(function () {
 
 		var datestring = releaseDate.toISOString().slice(0, 19).replace('T', ' ');
 		if(validateImpoundForm()) {
-			$.post('http://hrp_pd_impound/impound', JSON.stringify({
+			$.post('http://fezz_impound/impound', JSON.stringify({
 				plate: $('#plate').text(),
 				officer: $('#officer').val() || null,
 				mechanic: $('#mechanic').val() || null,
@@ -224,12 +224,12 @@ $(document).ready(function () {
 
 	$('table').on('click', '.pay', function () {
 		var plate = $(this).parent().parent().find('#plate').text();
-		$.post('http://hrp_pd_impound/unimpound', JSON.stringify(plate));
+		$.post('http://fezz_impound/unimpound', JSON.stringify(plate));
 	});
 
 	$('table').on('click', '.unlock', function () {
 		var plate = $(this).parent().parent().find('#plate').text();
-		$.post('http://hrp_pd_impound/unlock', JSON.stringify(plate));
+		$.post('http://fezz_impound/unlock', JSON.stringify(plate));
 	});
 
 	$('table').on('click', '.info', function () {
@@ -250,7 +250,7 @@ $(document).ready(function () {
 
 
 	$('#cancel, #exit').click(function (event) {
-		$.post('http://hrp_pd_impound/escape', null);
+		$.post('http://fezz_impound/escape', null);
 	});
 
 	// Date + months edge case handling:

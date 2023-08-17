@@ -1,5 +1,5 @@
 Config 					= {}
-
+Config.Debug = false
 Config.Impound 			= {
 	Name = "MissionRow",
 	RetrieveLocation = { X = 826.30, Y = -1290.20, Z = 28.60 },
