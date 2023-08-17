@@ -79,7 +79,7 @@ Bridge.ClientDeleteVeh = function(veh)
 end
 
 Bridge.TextUI = function(msg)
-  return ESX.TextUI()
+  return ESX.TextUI(msg)
 end
 
 Bridge.HideUI = function()

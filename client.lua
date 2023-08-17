@@ -4,7 +4,6 @@
 
 local ply = nil;
 local _OwnPlayerData = nil;
-local _DependenciesLoaded = false;
 
 local _Impound = Config.Impound
 
@@ -283,7 +282,7 @@ Citizen.CreateThread(function ()
 	while true do
 		inZone = false;
 		Citizen.Wait(500)
-		if(_DependenciesLoaded) then
+		if(Bridge.playerLoaded) then
 			local PlayerPed = GetPlayerPed(PlayerId())
 			local PlayerPedCoords = GetEntityCoords(PlayerPed)
 
@@ -295,7 +294,7 @@ Citizen.CreateThread(function ()
 				if (_CurrentAction ~= "retrieve") then
 
 					_CurrentAction = "retrieve"
-					Bridge.TextUI("Press ~INPUT_CONTEXT~ To unimpound a vehicle");
+					Bridge.TextUI("Press [E] To unimpound a vehicle");
 
 				end
 
@@ -307,7 +306,7 @@ Citizen.CreateThread(function ()
 				if (_CurrentAction ~= "store" and (ply.job.name == "police" or ply.job.name == "mecano")) then
 
 					_CurrentAction = "store"
-					Bridge.TextUI("Press ~INPUT_CONTEXT~ To impound this vehicle");
+					Bridge.TextUI("Press [E] To impound this vehicle");
 
 				end
 
@@ -321,7 +320,7 @@ Citizen.CreateThread(function ()
 						if (_CurrentAction ~= "admin" and (ply.job.name == "police" or ply.job.name == "mecano")) then
 
 							_CurrentAction = "admin"
-							Bridge.TextUI("Press ~INPUT_CONTEXT~ To open the admin terminal");
+							Bridge.TextUI("Press [E] To open the admin terminal");
 						end
 
 						break;
@@ -356,7 +355,7 @@ end)
 Citizen.CreateThread(function()
   while true do
     if _GuiEnabled then
-      local ply = GetPlayerPed(-1)
+      local ply = PlayerPedId()
       local active = true
       DisableControlAction(0, 1, active) -- LookLeftRight
       DisableControlAction(0, 2, active) -- LookUpDown
